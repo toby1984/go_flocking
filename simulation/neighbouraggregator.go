@@ -1,4 +1,4 @@
-package main
+package simulation
 
 import (
 	"github.com/toby1984/go_vectors/vector2"
@@ -39,21 +39,21 @@ func (v *NeighborAggregator) Visit(otherBoid *Boid) {
 		return
 	}
 
-	distance := otherBoid.location.DistanceTo(&boid.location)
+	distance := otherBoid.Location.DistanceTo(boid.Location)
 	v.neighbourCount++
 
-	v.locationSumX += otherBoid.location.X
-	v.locationSumY += otherBoid.location.Y
+	v.locationSumX += otherBoid.Location.X
+	v.locationSumY += otherBoid.Location.Y
 
-	v.velocitySumX += otherBoid.velocity.X
-	v.velocitySumY += otherBoid.velocity.Y
+	v.velocitySumX += otherBoid.Velocity.X
+	v.velocitySumY += otherBoid.Velocity.Y
 
 	if distance > 0 && distance < v.separationRadius {
-		tmpX := boid.location.X
-		tmpY := boid.location.Y
+		tmpX := boid.Location.X
+		tmpY := boid.Location.Y
 
-		tmpX -= otherBoid.location.X
-		tmpY -= otherBoid.location.Y
+		tmpX -= otherBoid.Location.X
+		tmpY -= otherBoid.Location.Y
 
 		length := tmpX*tmpX + tmpY*tmpY
 		if length > 0.00001 {

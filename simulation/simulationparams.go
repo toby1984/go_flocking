@@ -1,4 +1,4 @@
-package main
+package simulation
 
 type SimulationParams struct {
 	PopulationSize int32 // number of boids to simulate
@@ -26,8 +26,8 @@ int populationSize, double modelMax, double maxForce, double maxSpeed,
 
 func GetDefaultSimulationParams() SimulationParams {
 	return SimulationParams{
-		PopulationSize:    10000,
-		ModelMax:          2000,
+		PopulationSize:    10,
+		ModelMax:          300,
 		MaxSteeringForce:  5,
 		MaxSpeed:          10,
 		CohesionWeight:    0.33,

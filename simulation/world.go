@@ -1,4 +1,4 @@
-package main
+package simulation
 
 /*
 	private final KDTree<Boid> tree = new KDTree<>();
@@ -16,38 +16,32 @@ package main
 import (
 	"github.com/toby1984/go_vectors/vector2"
 	"math/rand"
-	"sync"
 )
 
 type World struct {
-	params        SimulationParams
-	allBoidsMutex sync.Mutex
-	allBoids      []Boid
+	SimulationParams SimulationParams
+	allBoids         []Boid
 }
 
 type BoidVisitor func(*Boid)
 
-func (w *World) Init() {
-	w.params = GetDefaultSimulationParams()
+func (w *World) Init(params SimulationParams, createRandomBoids bool) {
+	w.SimulationParams = params
 
-	w.allBoidsMutex.Lock()
-	defer w.allBoidsMutex.Unlock()
-	for i := int32(0); i < w.params.PopulationSize; i++ {
-		w.allBoids = append(w.allBoids, createRandomBoid(w.params))
+	if createRandomBoids {
+		for i := int32(0); i < w.SimulationParams.PopulationSize; i++ {
+			w.allBoids = append(w.allBoids, createRandomBoid(w.SimulationParams))
+		}
 	}
 }
 
 func (w *World) Add(b Boid) {
 
-	w.allBoidsMutex.Lock()
-	defer w.allBoidsMutex.Unlock()
 	w.allBoids = append(w.allBoids, b)
 }
 
 func (w *World) Visit(visitor BoidVisitor) {
 
-	w.allBoidsMutex.Lock()
-	defer w.allBoidsMutex.Unlock()
 	for _, boid := range w.allBoids {
 		tmp := boid
 		visitor(&tmp)
@@ -56,11 +50,9 @@ func (w *World) Visit(visitor BoidVisitor) {
 
 func (w *World) VisitNearestBoids(x float32, y float32, maxRadius float32, visitor BoidVisitor) {
 
-	w.allBoidsMutex.Lock()
 	radiusSqrt := maxRadius * maxRadius
-	defer w.allBoidsMutex.Unlock()
 	for _, boid := range w.allBoids {
-		if boid.location.DistanceToSqrt(x, y) < radiusSqrt {
+		if boid.Location.DistanceToSqrt(x, y) < radiusSqrt {
 			tmp := boid
 			visitor(&tmp)
 		}
@@ -68,7 +60,11 @@ func (w *World) VisitNearestBoids(x float32, y float32, maxRadius float32, visit
 }
 
 func createRandomBoid(params SimulationParams) Boid {
-	return Boid{acceleration: createRandomPosition(params), location: createRandomAcceleration(params), velocity: createRandomVelocity(params)}
+	var result = newBoid()
+	result.Acceleration = createRandomAcceleration(params)
+	result.Location = createRandomPosition(params)
+	result.Velocity = createRandomVelocity(params)
+	return result
 }
 
 func createRandomPosition(params SimulationParams) vector2.Vector2 {

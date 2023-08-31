@@ -1,20 +1,25 @@
-package main
+package simulation
 
-import "github.com/toby1984/go_vectors/vector2"
+import (
+	"github.com/toby1984/go_vectors/vector2"
+)
 
-func Advance(w *World) {
-	w.Visit(func(b *Boid) {
-		params := w.params
+func Advance(currentWorld *World) *World {
+	var nextWorld World
+	nextWorld.SimulationParams = currentWorld.SimulationParams
 
-		newAcceleration := flock(b, params, w)
+	nextWorld.Init(currentWorld.SimulationParams, false)
 
-		newVelocity := b.velocity.Add(&newAcceleration).Limit(params.MaxSpeed)
-		newLocation := b.location.Add(newVelocity).WrapIfNecessary(params.ModelMax)
+	currentWorld.Visit(func(b *Boid) {
+		params := currentWorld.SimulationParams
 
-		b.location = *newLocation
-		b.velocity = *newVelocity
-		b.acceleration = newAcceleration
+		newAcceleration := flock(b, params, currentWorld)
+		newVelocity := b.Velocity.Add(newAcceleration).Limit(params.MaxSpeed)
+		newLocation := b.Location.Add(newVelocity).WrapIfNecessary(params.ModelMax)
+
+		nextWorld.Add(b.CreateCopyWith(newAcceleration, newLocation, newVelocity))
 	})
+	return &nextWorld
 }
 
 func flock(b *Boid, parameters SimulationParams, world *World) vector2.Vector2 {
@@ -32,7 +37,7 @@ func flock(b *Boid, parameters SimulationParams, world *World) vector2.Vector2 {
 	separationVec := visitor.GetAverageSeparationHeading()
 
 	// border force
-	pos := b.location
+	pos := b.Location
 	borderForce := vector2.Vector2{}
 
 	if pos.X < parameters.BorderRadius {
@@ -53,17 +58,17 @@ func flock(b *Boid, parameters SimulationParams, world *World) vector2.Vector2 {
 
 	mean := vector2.Vector2{}
 
-	mean.Add(cohesionVec.Normalize().Multiply(parameters.CohesionWeight))
-	mean.Add(alignmentVec.Normalize().Multiply(parameters.AlignmentWeight))
-	mean.Add(separationVec.Normalize().Multiply(parameters.SeparationWeight))
-	mean.Add(borderForce.Multiply(parameters.BorderForceWeight))
+	mean = mean.Add(cohesionVec.Normalize().Multiply(parameters.CohesionWeight))
+	mean = mean.Add(alignmentVec.Normalize().Multiply(parameters.AlignmentWeight))
+	mean = mean.Add(separationVec.Normalize().Multiply(parameters.SeparationWeight))
+	mean = mean.Add(borderForce.Multiply(parameters.BorderForceWeight))
 
 	return mean
 }
 
-func steerTo(params SimulationParams, boid *Boid, target vector2.Vector2) *vector2.Vector2 {
+func steerTo(params SimulationParams, boid *Boid, target vector2.Vector2) vector2.Vector2 {
 
-	desiredDirection := target.Minus(boid.location)
+	desiredDirection := target.Minus(boid.Location)
 	var distance = float64(desiredDirection.Len())
 	if distance > 0 {
 		desiredDirection = desiredDirection.Normalize()
@@ -73,9 +78,9 @@ func steerTo(params SimulationParams, boid *Boid, target vector2.Vector2) *vecto
 			desiredDirection = desiredDirection.Multiply(params.MaxSpeed)
 		}
 
-		desiredDirection = desiredDirection.Minus(boid.velocity)
+		desiredDirection = desiredDirection.Minus(boid.Velocity)
 		desiredDirection = desiredDirection.Limit(params.MaxSteeringForce)
 		return desiredDirection
 	}
-	return &vector2.Vector2{}
+	return vector2.Vector2{}
 }
